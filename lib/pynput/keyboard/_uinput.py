@@ -253,7 +253,7 @@ class Layout(object):
         result = {}
         for keycode, names in self.KEYCODE_RE.findall(
                 subprocess.check_output(
-                    ['dumpkeys', '--full-table']).decode('utf-8')):
+                    ['sudo', 'dumpkeys', '--full-table']).decode('utf-8')):
             vk = int(keycode)
             keys = tuple(
                 self._parse(vk, name)
@@ -321,46 +321,58 @@ class Controller(_base.Controller):
         # modifiers
         try:
             vk, required_modifiers = self._to_vk_and_modifiers(key)
+            # print(required_modifiers)
+            # if required_modifiers is not None:
+            #     required_modifiers -= {Key.alt_gr}
         except ValueError:
             raise self.InvalidKeyException(key)
 
-        # Determine how we need to modify the modifier state
-        if is_press and required_modifiers is not None:
-            with self.modifiers as modifiers:
-                vk, required_modifiers = self._layout.for_char(key.char)
-                to_press = {
-                    getattr(evdev.ecodes, key.value._kernel_name)
-                    for key in (required_modifiers - modifiers)}
-                to_release = {
-                    getattr(evdev.ecodes, key.value._kernel_name)
-                    for key in (modifiers - required_modifiers)}
-        else:
-            to_release = set()
-            to_press = set()
+        # # Determine how we need to modify the modifier state
+        # if is_press and required_modifiers is not None:
+        #     with self.modifiers as modifiers:
+        #         vk, required_modifiers = self._layout.for_char(key.char)
+        #         print(required_modifiers)
+        #         to_press = {
+        #             getattr(evdev.ecodes, key.value._kernel_name)
+        #             for key in (required_modifiers - modifiers)}
+        #         to_release = {
+        #             getattr(evdev.ecodes, key.value._kernel_name)
+        #             for key in (modifiers - required_modifiers)}
+        # else:
+        #     to_release = set()
+        #     to_press = set()
 
-        # Update the modifier state, send the key, and finally release any
-        # modifiers
-        cleanup = []
-        try:
-            for k in to_release:
-                self._send(k, False)
-                cleanup.append((k, True))
-            for k in to_press:
-                self._send(k, True)
-                cleanup.append((k, False))
+        # # print(vk)
+        # # print(required_modifiers)
+        # # print(to_press)
+        # # Update the modifier state, send the key, and finally release any
+        # # modifiers
+        # cleanup = []
+        # try:
+        #     for k in to_release:
+        #         self._send(k, False)
+        #         cleanup.append((k, True))
+        #     for k in to_press:
+        #         self._send(k, True)
+        #         cleanup.append((k, False))
 
-            self._send(vk, is_press)
+        # # if key.isupper() and is_press:
+        # #     self._send(evdev.ecodes.KEY_LEFTSHIFT, is_press)
+        self._send(vk, is_press)
+        # if key.isupper() and not is_press:
+        #     self._send(evdev.ecodes.KEY_LEFTSHIFT, is_press)
+        # self._send(vk, not is_press)
 
-        finally:
-            for e in reversed(cleanup):
-                # pylint: disable E722; we want to suppress exceptions
-                try:
-                    self._send(*e)
-                except:
-                    pass
-                # pylint: enable E722
+        # finally:
+        #     for e in reversed(cleanup):
+        #         # pylint: disable E722; we want to suppress exceptions
+        #         try:
+        #             self._send(*e)
+        #         except:
+        #             pass
+        #         # pylint: enable E722
 
-            self._dev.syn()
+        self._dev.syn()
 
     def _to_vk_and_modifiers(self, key):
         """Resolves a key to a virtual key code and a modifier set.

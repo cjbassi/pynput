@@ -51,7 +51,7 @@ def backend(package):
     elif sys.platform == 'win32':
         modules = ['win32']
     else:
-        modules = ['xorg']
+        modules = ['uinput']
 
     errors = []
     for module in modules:

@@ -1,3 +1,4 @@
+import evdev
 # coding=utf-8
 # pynput
 # Copyright (C) 2015-2020 Moses Palmér
@@ -382,7 +383,10 @@ class Controller(object):
             self._dead_key = resolved
             return
 
+        # print(resolved)
         try:
+            if isinstance(key, str) and (key.isupper() or key in '~_+<>?:"{}|!@#$%^&*()'):
+                self._send(evdev.ecodes.KEY_LEFTSHIFT, True)
             self._handle(resolved, True)
         except self.InvalidKeyException:
             if resolved != original:
@@ -417,6 +421,8 @@ class Controller(object):
             return
 
         self._handle(resolved, False)
+        if isinstance(key, str) and (key.isupper() or key in '~_+<>?:"{}|!@#$%^&*()'):
+            self._send(evdev.ecodes.KEY_LEFTSHIFT, False)
 
     def touch(self, key, is_press):
         """Calls either :meth:`press` or :meth:`release` depending on the value
